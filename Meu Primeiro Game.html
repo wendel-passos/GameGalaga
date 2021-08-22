@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Invader - Minha versão</title>
+</head>
+<body>
+
+    <canvas id="meuCanvas" width="1000" height="650"></canvas>
+
+
+    <script>
+
+
+        canvas = document.getElementById("meuCanvas")
+
+
+        context = canvas.getContext("2d")
+
+
+        iniciar()
+
+
+        function iniciar(){
+
+
+            vida = 3
+
+
+            pontos = 0
+
+
+            xPersona = 400
+
+
+            yPersona = 500
+
+
+            tempoT = 25
+            tempoV = 0
+
+
+            setaL = false
+
+
+            setaR = false
+
+
+            setaT = false
+
+
+            somP = false
+            gameOver = false
+
+
+            balas = new Array()
+
+
+            batalhao = new Array()
+
+
+            explosoes = new Array()
+
+
+            som_fundo = new Audio("som/02Rounds1.mp3")
+
+
+            som_tiro = new Audio("som/tiro.mp3")
+
+
+            som_explodir = new Audio("som/explosion.wav")
+
+
+            gerarInimigo()
+
+
+            requestAnimationFrame(desenhar)
+            
+        }
+        function gerarInimigo(){
+
+
+            cont = 0
+
+
+            for(var linha=0;linha<3;linha++){
+
+
+                for(var col=0;col<6;col++){
+
+
+                    batalhao[cont]= new inimigo(100+(col*130),40+(linha*90),cont)
+
+
+                    cont++
+
+                }
+
+            }
+
+        }
+
+
+
+
+        function desenhar(){
+
+
+            fundo()
+
+
+            persona()
+
+
+            for(var c=0; c<balas.length; c++)
+
+
+                balas[c].mover()
+
+
+            for(var c=0; c<batalhao.length; c++)
+
+
+                batalhao[c].desenhar(c)
+
+
+            for(var c=0; c<explosoes.length; c++)
+
+
+                explosoes[c].desenhar(c)            
+
+
+            placar()
+            desenharVidas()
+            if (vida <0){
+                cancelAnimationFrame(desenhar)
+                gameOver = true
+                fimJogo()
+                cancelAnimationFrame(desenhar)
+            }
+            requestAnimationFrame(desenhar)
+
+        }
+        function desenharVidas(){
+            var imgV= new Image()
+            imgV.src= "img/coracao.png"
+            imgV.onload = function (){
+                for ( var c= 0; c<vida; c++)
+                    context.drawImage (imgV,200+ (c*50), 10, 30, 30)
+            }
+
+        }
+        function fimJogo(){
+            if (gameOver = true){
+                var fundo = new Image()
+                fundo.src = "img/gameOver.png"
+                fundo.onload = function (){
+                    context.drawImage(fundo, 0, 0, canvas.width,canvas.height)
+                }
+                batalhao.splice(0,batalhao.length)
+                cancelAnimationFrame(desenhar)
+            }
+
+        }
+
+
+
+
+        function explodir(xE, yE, id){
+
+
+            this.id = id
+
+
+            this.xExp = xE
+
+
+            this.yExp = yE
+
+
+            this.coluna = 0
+
+
+            this.linha = 0
+
+
+            this.largura = 64
+
+
+            this.altura = 63            
+
+
+            var img = new Image()
+
+
+            img.src = "img/exp2.png"
+
+
+            this.desenhar = function(ca){
+
+
+                this.id = ca
+
+
+                this.ex_img = this.coluna * this.largura
+
+
+                this.ey_img = this.linha * this.altura
+
+
+                context.drawImage(img, this.ex_img, this.ey_img, 
+
+
+                                       this.largura, this.altura, 
+
+
+                                       this.xExp, this.yExp, 
+
+
+                                      this.largura, this.altura)
+
+
+                this.coluna++
+
+
+                if (this.coluna>3){
+
+
+                    this.coluna = 0
+
+
+                    this.linha++
+
+                }
+
+
+                if(this.linha>4){
+
+
+                    this.linha = 0
+
+
+                    explosoes.splice(this.id,1)
+
+                }
+
+            }
+
+        }
+
+
+
+
+        function placar(){
+
+
+            context.font = "20px Arial"
+
+
+            context.fillStyle = "#FF7722"
+
+
+            context.fillText("Pontos: "+pontos, 80,30)
+
+        }
+
+
+
+
+        function fundo(){
+
+
+            var img = new Image()
+
+
+            img.src = "img/universo.png"
+
+
+            img.onload = function(){
+
+
+                context.drawImage(img, 0,0,canvas.width, canvas.height)
+
+            }
+
+        }
+
+
+
+
+        function persona(){
+
+
+            var per = new Image()
+
+
+            per.src = "img/persona.png"
+
+
+            per.onload = function(){
+
+
+                context.drawImage(per, xPersona, yPersona, 128, 100)
+
+            }
+
+
+            if(setaL && xPersona>0){
+
+
+                xPersona-=10
+
+            }
+
+
+            if(setaR && xPersona<canvas.width-128){
+
+
+                xPersona+=10
+
+            }
+
+
+            if(setaT && tempoT>50){
+
+
+                    balas[balas.length] = new tiro()
+
+
+                    som_tiro.play()
+
+
+                    tempoT = 0
+
+
+            } else {
+
+
+                    tempoT++
+
+            }
+
+
+            if(somP) {
+
+
+                som_fundo.play()
+
+
+            } else {
+
+
+                som_fundo.pause()
+
+            }
+            for (var c=0; c<batalhao.length; c++){
+                if (batalhao [c].yi+30 > yPersona && batalhao [c].yi < yPersona + 20){
+                    if (batalhao [c]. xi+100 > xPersona && batalhao [c].xi < xPersona+100){                      
+                        tempoV++
+                        
+                    }
+                }
+            
+            }
+            if(tempoV > 0){
+                tempoV++
+                if (tempoV>1 && tempoV < 4){
+                    explosoes[explosoes.length] = new explodir(xPersona+40,yPersona,explosoes.length)
+                    som_explodir.play()
+                    vida--
+                }
+                if(tempoV>120){                 
+                    gerarInimigo()
+                    tempoV= 0
+                }
+            }
+
+        }
+
+
+
+
+        function tiro(){
+
+
+            this.xt = xPersona+63
+
+
+            this.yt = 500
+
+
+            this.mover = function(){
+
+
+                context.fillStyle = "#FFFFFF"
+
+
+                context.fillRect(this.xt,this.yt,3,10)
+
+
+                this.yt -= 7
+
+
+                if(this.yt<-10){
+
+
+                    balas.splice(0,1)
+
+                }
+
+            }
+
+        }
+
+
+
+
+        function inimigo(xi,yi,id){
+
+
+            this.id = id
+
+
+            this.xi = xi
+
+
+            this.yi = yi
+
+
+            this.tempo = 0
+
+
+            this.lado = false
+
+
+            var img = new Image()
+
+
+            img.src = "img/inimigo.png"
+
+
+            this.desenhar = function(ca){
+
+
+                context.drawImage(img, this.xi, this.yi, 100, 60)
+
+
+                this.tempo++
+
+
+                this.id = ca
+
+
+                //console.log(this.id)
+
+
+                if(this.tempo>200){
+
+
+                    this.yi += 30
+
+
+                    this.tempo = 0
+
+
+                    if(!this.lado){
+
+
+                        this.xi += 40
+
+
+                        this.lado = true
+
+
+                    } else {
+
+
+                        this.xi -= 40
+
+
+                        this.lado = false
+
+                    }
+
+                }
+
+
+                for(var b=0;b<balas.length;b++){
+
+
+                    //console.log(balas[c].xt)
+
+
+                    if(balas[b].xt>this.xi && balas[b].xt-3<this.xi+100){
+
+
+                        //console.log("acertou")
+
+
+                        if(balas[b].yt>this.yi && balas[b].yt-10<this.yi+60){
+
+
+                            explosoes[explosoes.length] = new explodir(this.xi+20,this.yi,explosoes.length)
+
+
+                            batalhao.splice(this.id,1)
+
+
+                            balas.splice(b,1)
+
+
+                            som_explodir.play()
+
+
+                            vaiExplodir = true
+
+
+                            pontos++
+
+                        }
+
+                    }
+
+                }
+
+
+                if(batalhao.length == 0){
+
+
+                    gerarInimigo()                   
+
+                }
+
+            }
+
+        }
+
+
+
+
+        document.addEventListener('keydown',function(evento){
+
+
+            if(evento.keyCode == 37){
+
+
+                setaL = true
+
+
+                setaR = false
+
+            }
+
+
+            if(evento.keyCode == 39){
+
+
+                setaR = true
+
+
+                setaL = false
+
+            }
+
+
+            if(evento.keyCode == 32){
+
+
+                setaT = true
+
+            }
+
+
+            if(evento.keyCode == 83){
+
+
+                if(!somP)
+
+
+                    somP = true
+
+
+                else
+
+
+                    somP = false
+
+            }
+
+        })
+
+
+        document.addEventListener('keyup',function(evento){
+
+
+            if(evento.keyCode == 37){
+
+
+                setaL = false
+
+
+                setaR = false
+
+            }
+
+
+            if(evento.keyCode == 39){
+
+
+                setaR = false
+
+
+                setaL = false
+
+            }
+
+
+            if(evento.keyCode == 32){
+
+
+                tempoT = 45
+
+
+                setaT = false
+
+            }
+
+        })
+
+
+    </script>
+
+
+</body>
+
+
+</html>
